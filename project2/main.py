@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 from PIL import Image, ImageTk, ImageGrab
 from tkinter import filedialog
+from Camera import Camera
+from Model import Model
 
 #=====================Global Variable===============
 
@@ -133,7 +135,7 @@ def main():
     
     window = tk.Tk()
     window.title("Virtual drawing App")
-    window.geometry("600x800")
+    window.geometry("1280x900")
     window.resizable(False, False)
     
     
@@ -196,9 +198,12 @@ def main():
     camera_frame = tk.Frame(window, bg="white", height= 300)
     camera_frame.pack(fill="x")
 
-    camera_view = tk.Label(camera_frame, bg="black", width=80, height=20)
+    camera_view = tk.Label(camera_frame, bg="black", height=400)
     camera_view.pack(fill="both", expand=True, padx=10, pady=10)
-    
+
+    model = Model()
+    camera = Camera(camera_view, model)
+
     #--------------Canvas area-------------
     canvas_frame = tk.Frame(window, bg="white")
     canvas_frame.pack(fill="both", expand=True)
@@ -227,6 +232,7 @@ def main():
     # prevent image from disappearing
     drawing_canvas.tk_canvas_image = tk_canvas_image
 
+    camera.update()
     window.mainloop()
 
 main()
