@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 
 class Model():
-    def __init__(self, use_gpu=False):
+    def __init__(self, use_gpu=True):
         """
         Initializes the HandLandmarker model.
         
@@ -42,7 +42,7 @@ class Model():
         self.prev_pos    = None
         self.is_pinching = None
 
-    def detect_video_frame(self, rgb_frame, timestamp):
+    def detect_video_frame(self, frame, timestamp):
         """
         Detects hand landmarks in a video frame.
         
@@ -54,16 +54,21 @@ class Model():
             A HandLandmarkerResult object or None if an error occurs.
         """
         try:
+            # convert the BGR image to RGB
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            
             # create a MediaPipe image object
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
             
             # detect hand landmarks
-            self.detection_result = self.detector.detect_for_video(mp_image, timestamp)
+            detection_result = self.detector.detect_for_video(mp_image, timestamp)
+            
+            return detection_result
         except Exception as e:
             print(f"Error during frame detection: {e}")
             return None
 
-    def update_gesture(self):
+    def update_gesture(self, detection_result):
         """
         Updates detected gesture.
 
@@ -71,16 +76,16 @@ class Model():
             detection_result: landmark detection result
         """
         # return None if hands are not detected
-        if not self.detection_result.hand_landmarks:
+        if not detection_result.hand_landmarks:
             self.gesture = None
             return
 
         # use the detection result from the first hand
-        landmarks = self.detection_result.hand_landmarks[0]
+        landmarks = detection_result.hand_landmarks[0]
 
         # use the tip of the index finger for gesture recognition
-        threshold = 0.05
-        eps = 0.01
+        threshold = 0.1
+        eps = 0.02
         thumb_x = landmarks[4].x
         thumb_y = landmarks[4].y
         fingertip_x = landmarks[8].x
@@ -89,6 +94,7 @@ class Model():
         # check if pinching
         if abs(thumb_x - fingertip_x) < eps and abs(thumb_y - fingertip_y) < eps:
             self.is_pinching = True
+            self.gesture = "pinching"
         else: 
             self.is_pinching = False
 
