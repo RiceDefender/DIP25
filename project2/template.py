@@ -1,14 +1,87 @@
 import tkinter as tk
 import cv2
-from PIL import Image, ImageTk
+import numpy as np
+from PIL import Image, ImageTk, ImageGrab
 from tkinter import filedialog
 
-#--------------------------Global Variable---------------------
+#=====================Global Variable===============
 
-#--------------------------menu func-----------------------
+#=====================option func===================
 def camera_toggle():
     print("Camera toggled")
+    
+#--------------Save&Export----------------
+def save_export():
+    global cv_canvas
 
+    win = tk.Toplevel()
+    win.title("Save / Export")
+    win.geometry("600x400")
+    win.resizable(False, False)
+
+
+    #=================================Click Save Button func
+    def click_save():
+        
+        filepath = filedialog.asksaveasfilename(title="Save As", defaultextension="",
+            filetypes=[
+                ("PNG Image", "*.png"),
+                ("JPEG Image", "*.jpg;*.jpeg"),
+                ("PDF File", "*.pdf"),
+                ("All Files", "*.*")])
+        if not filepath:
+            return 
+        
+        cv_canvas = drawing_canvas.cv_canvas  
+
+        ext = filepath.split(".")[-1].lower()
+
+        if ext not in ["png", "jpg", "jpeg", "pdf"]:
+            filepath += ".png"
+            ext = "png"
+
+        if ext in ["png", "jpg", "jpeg"]:
+            cv2.imwrite(filepath, cv_canvas)
+
+        elif ext == "pdf":
+            pil_img = Image.fromarray(cv2.cvtColor(cv_canvas, cv2.COLOR_BGR2RGB)).convert("RGB")
+            pil_img.save(filepath, "PDF", resolution=100.0)
+        print("Save:", filepath)
+
+    #-----Bottom Buttons--------
+    btn_frame = tk.Frame(win)
+    btn_frame.pack(side="bottom",pady=20)
+
+    save_btn = tk.Button(btn_frame, text="Save", width=10,command=click_save)
+    save_btn.grid(row=0, column=0, padx=10)
+
+    cancel_btn = tk.Button(btn_frame, text="Cancel", width=10, command=win.destroy)
+    cancel_btn.grid(row=0, column=1, padx=10)
+
+    #--------Preview Frame------
+    preview_frame = tk.Frame(win, bg="#ddd", width=400, height=400)
+    preview_frame.pack(padx=10, pady=10)
+    preview_frame.pack_propagate(False)
+
+    preview_label = tk.Label(preview_frame, bg="#ddd")
+    preview_label.pack(expand=True)
+
+    # canvas -> screenshot -> show preview_thumbnail
+    win.update()
+    canvas_x = drawing_canvas.winfo_rootx()
+    canvas_y = drawing_canvas.winfo_rooty()
+    canvas_w = drawing_canvas.winfo_width()
+    canvas_h = drawing_canvas.winfo_height()
+
+    img = ImageGrab.grab(bbox=(canvas_x,canvas_y,canvas_x + canvas_w,canvas_y + canvas_h))
+    img.thumbnail((400, 400))
+    preview_img = ImageTk.PhotoImage(img)
+
+    preview_label.config(image=preview_img)
+    preview_label.image = preview_img
+    print("Save selected")
+
+#======================draw func===================
 def pen_mode():
     print("Pen mode selected")
 
@@ -16,12 +89,8 @@ def erase_mode():
     print("Erase mode selected")
 def clear_canvas():
     print("clear_canvas selected")
- #--------------Camera----------------
 
-#--------------export IMG----------------
-def save_export():
-    print("Save selected")
-
+#======================Info func===================
  #--------------team info window------------
 def open_team_info(root):
     win = tk.Toplevel(root)
@@ -136,8 +205,27 @@ def main():
 
     drawing_canvas = tk.Canvas(canvas_frame, bg="lightgray")
     drawing_canvas.pack(fill="both", expand=True, padx=10, pady=10)
+    window.update() 
 
+    #-------------Generate empty Canvas-----------
+    canvas_w = drawing_canvas.winfo_width()
+    canvas_h = drawing_canvas.winfo_height()
 
+    cv_canvas = np.ones((canvas_h, canvas_w,3), dtype=np.uint8) 
+    cv_canvas = cv_canvas * 255
+    
+    #===============================================================
+    cv2.rectangle(cv_canvas, (50, 50), (200, 200), (0, 0, 255), -1) # test for create red rectangle
+    #===============================================================
+
+    pil_canvas = Image.fromarray(cv2.cvtColor(cv_canvas, cv2.COLOR_BGR2RGB))
+    tk_canvas_image = ImageTk.PhotoImage(pil_canvas)
+    drawing_canvas.create_image(0, 0, anchor="nw", image=tk_canvas_image)
+
+    # store the OpenCV image for save/draw
+    drawing_canvas.cv_canvas = cv_canvas
+    # prevent image from disappearing
+    drawing_canvas.tk_canvas_image = tk_canvas_image
 
     window.mainloop()
 
