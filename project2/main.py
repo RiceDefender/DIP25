@@ -5,13 +5,15 @@ from PIL import Image, ImageTk
 from tkinter import filedialog
 from Camera import Camera
 from Model import Model
+from draw_utils import Drawer
 
 #=====================Global Variable===============
 camera = None
 camera_on = False
+drawer = None
 #=====================option func===================
 def camera_toggle():
-    global camera, camera_on, camera_view, model
+    global camera, camera_on, camera_view, model, drawer, drawing_canvas
     
     if camera_on == True:
         print("Camera OFF")
@@ -28,11 +30,11 @@ def camera_toggle():
         print("Camera ON")
         camera_on = True
         
-        camera = Camera(camera_view, model)
+        camera = Camera(camera_view, model, drawer, drawing_canvas)
         camera.update()
 #--------------Save&Export----------------
 def save_export():
-    global cv_canvas
+    global drawer
 
     win = tk.Toplevel()
     win.title("Save / Export")
@@ -52,7 +54,7 @@ def save_export():
         if not filepath:
             return 
         
-        cv_canvas = drawing_canvas.cv_canvas  
+        cv_canvas = drawer.get_canvas()
 
         ext = filepath.split(".")[-1].lower()
 
@@ -87,7 +89,7 @@ def save_export():
     preview_label.pack(expand=True)
 
     # canvas -> copy drawing_canvas -> show preview_thumbnail
-    preview = drawing_canvas.cv_canvas.copy()
+    preview = drawer.get_canvas().copy()
     preview = cv2.cvtColor(preview, cv2.COLOR_BGR2RGB)
     preview = Image.fromarray(preview)
     
@@ -100,24 +102,20 @@ def save_export():
 
 #======================draw func===================
 def pen_mode():
+    global drawer
+    drawer.draw_color = (0, 0, 0) # Black
     print("Pen mode selected")
 
 def erase_mode():
+    global drawer
+    drawer.draw_color = (255, 255, 255) # White
     print("Erase mode selected")
     
     
     #--------------Clear Canvas------------
 def clear_canvas():
-    canvas_w = drawing_canvas.winfo_width()
-    canvas_h = drawing_canvas.winfo_height()
-    #----------------Generate new Canvas------------------
-    new_canvas = np.ones((canvas_h, canvas_w, 3), np.uint8) * 255
-    pil_canvas = Image.fromarray(cv2.cvtColor(new_canvas, cv2.COLOR_BGR2RGB))
-    tk_canvas_image = ImageTk.PhotoImage(pil_canvas)
-    drawing_canvas.create_image(0, 0, anchor="nw", image=tk_canvas_image)
-    
-    drawing_canvas.cv_canvas = new_canvas 
-    drawing_canvas.tk_canvas_image = tk_canvas_image
+    global drawer
+    drawer.clear()
     print("clear_canvas selected")
 
 #======================Info func===================
@@ -159,7 +157,7 @@ def open_project_info(root):
 
 #---------------------------main UI----------------------
 def main():
-    global drawing_canvas,camera_view, model,canvas_frame
+    global drawing_canvas,camera_view, model, drawer
     
     window = tk.Tk()
     window.title("Virtual drawing App")
@@ -233,13 +231,12 @@ def main():
     camera_view.pack(fill="x", expand=False, padx=10, pady=10)
 
     model = Model()
-    camera = Camera(camera_view, model)
-
+    
     #--------------Canvas area-------------
     canvas_frame = tk.Frame(window, bg="white")
     canvas_frame.pack(fill="both",expand=True)
 
-    drawing_canvas = tk.Canvas(canvas_frame, bg="lightgray")
+    drawing_canvas = tk.Canvas(canvas_frame, bg="white")
     drawing_canvas.pack(fill="both", expand=True, padx=10, pady=10)
     window.update() 
 
@@ -247,21 +244,8 @@ def main():
     canvas_w = drawing_canvas.winfo_width()
     canvas_h = drawing_canvas.winfo_height()
 
-    cv_canvas = np.ones((canvas_h, canvas_w,3), dtype=np.uint8) 
-    cv_canvas = cv_canvas * 255
-    
-    #===============================================================
-    cv2.rectangle(cv_canvas, (50, 50), (200, 200), (0, 0, 255), -1) # test for create red rectangle
-    #===============================================================
-
-    pil_canvas = Image.fromarray(cv2.cvtColor(cv_canvas, cv2.COLOR_BGR2RGB))
-    tk_canvas_image = ImageTk.PhotoImage(pil_canvas)
-    drawing_canvas.create_image(0, 0, anchor="nw", image=tk_canvas_image)
-
-    # store the OpenCV image for save/draw
-    drawing_canvas.cv_canvas = cv_canvas
-    # prevent image from disappearing
-    drawing_canvas.tk_canvas_image = tk_canvas_image
+    drawer = Drawer(canvas_w, canvas_h)
+    camera = Camera(camera_view, model, drawer, drawing_canvas)
 
     camera.update()
     window.mainloop()

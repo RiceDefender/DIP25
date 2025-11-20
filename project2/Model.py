@@ -88,7 +88,7 @@ class Model():
 
         # use the tip of the index finger for gesture recognition
         threshold = 0.1
-        eps = 0.02
+        eps = 0.05
         thumb_x = landmarks[4].x
         thumb_y = landmarks[4].y
         fingertip_x = landmarks[8].x
