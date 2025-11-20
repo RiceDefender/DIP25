@@ -3,9 +3,12 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import numpy as np
 import cv2
+import os
+
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "hand_landmarker.task") #Absolute path
 
 class Model():
-    def __init__(self, use_gpu=True):
+    def __init__(self, use_gpu=False):
         """
         Initializes the HandLandmarker model.
         
@@ -16,14 +19,14 @@ class Model():
             # try to use GPU
             delegate = python.BaseOptions.Delegate.GPU if use_gpu else python.BaseOptions.Delegate.CPU
             base_options = python.BaseOptions(
-                model_asset_path="hand_landmarker.task",
+                model_asset_path=MODEL_PATH,
                 delegate=delegate
             )
         except RuntimeError as e:
             # use CPU if GPU is not available
             print(f"Failed to initialize with GPU ({e}). Falling back to CPU.")
             base_options = python.BaseOptions(
-                model_asset_path="hand_landmarker.task",
+                model_asset_path=MODEL_PATH,
                 delegate=python.BaseOptions.Delegate.CPU
             )
 

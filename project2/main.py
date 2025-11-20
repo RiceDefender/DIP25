@@ -1,17 +1,35 @@
 import tkinter as tk
 import cv2
 import numpy as np
-from PIL import Image, ImageTk, ImageGrab
+from PIL import Image, ImageTk
 from tkinter import filedialog
 from Camera import Camera
 from Model import Model
 
 #=====================Global Variable===============
-
+camera = None
+camera_on = False
 #=====================option func===================
 def camera_toggle():
-    print("Camera toggled")
+    global camera, camera_on, camera_view, model
     
+    if camera_on == True:
+        print("Camera OFF")
+        camera_on = False
+
+        if camera is not None and camera.camera.isOpened():
+            camera.camera.release()
+
+        camera_view.configure(image="", text="")
+        camera_view.image = None
+        return
+
+    if camera_on == False:
+        print("Camera ON")
+        camera_on = True
+        
+        camera = Camera(camera_view, model)
+        camera.update()
 #--------------Save&Export----------------
 def save_export():
     global cv_canvas
@@ -68,16 +86,13 @@ def save_export():
     preview_label = tk.Label(preview_frame, bg="#ddd")
     preview_label.pack(expand=True)
 
-    # canvas -> screenshot -> show preview_thumbnail
-    win.update()
-    canvas_x = drawing_canvas.winfo_rootx()
-    canvas_y = drawing_canvas.winfo_rooty()
-    canvas_w = drawing_canvas.winfo_width()
-    canvas_h = drawing_canvas.winfo_height()
-
-    img = ImageGrab.grab(bbox=(canvas_x,canvas_y,canvas_x + canvas_w,canvas_y + canvas_h))
-    img.thumbnail((400, 400))
-    preview_img = ImageTk.PhotoImage(img)
+    # canvas -> copy drawing_canvas -> show preview_thumbnail
+    preview = drawing_canvas.cv_canvas.copy()
+    preview = cv2.cvtColor(preview, cv2.COLOR_BGR2RGB)
+    preview = Image.fromarray(preview)
+    
+    preview.thumbnail((400, 400))
+    preview_img = ImageTk.PhotoImage(preview)
 
     preview_label.config(image=preview_img)
     preview_label.image = preview_img
@@ -89,7 +104,20 @@ def pen_mode():
 
 def erase_mode():
     print("Erase mode selected")
+    
+    
+    #--------------Clear Canvas------------
 def clear_canvas():
+    canvas_w = drawing_canvas.winfo_width()
+    canvas_h = drawing_canvas.winfo_height()
+    #----------------Generate new Canvas------------------
+    new_canvas = np.ones((canvas_h, canvas_w, 3), np.uint8) * 255
+    pil_canvas = Image.fromarray(cv2.cvtColor(new_canvas, cv2.COLOR_BGR2RGB))
+    tk_canvas_image = ImageTk.PhotoImage(pil_canvas)
+    drawing_canvas.create_image(0, 0, anchor="nw", image=tk_canvas_image)
+    
+    drawing_canvas.cv_canvas = new_canvas 
+    drawing_canvas.tk_canvas_image = tk_canvas_image
     print("clear_canvas selected")
 
 #======================Info func===================
@@ -131,11 +159,14 @@ def open_project_info(root):
 
 #---------------------------main UI----------------------
 def main():
-    global drawing_canvas
+    global drawing_canvas,camera_view, model,canvas_frame
     
     window = tk.Tk()
     window.title("Virtual drawing App")
-    window.geometry("1280x900")
+    #==============================
+    #If you want to fix window size, modify this line.
+    window.geometry("1280x1000")
+    #==============================
     window.resizable(False, False)
     
     
@@ -198,15 +229,15 @@ def main():
     camera_frame = tk.Frame(window, bg="white", height= 300)
     camera_frame.pack(fill="x")
 
-    camera_view = tk.Label(camera_frame, bg="black", height=400)
-    camera_view.pack(fill="both", expand=True, padx=10, pady=10)
+    camera_view = tk.Label(camera_frame, bg="black")
+    camera_view.pack(fill="x", expand=False, padx=10, pady=10)
 
     model = Model()
     camera = Camera(camera_view, model)
 
     #--------------Canvas area-------------
     canvas_frame = tk.Frame(window, bg="white")
-    canvas_frame.pack(fill="both", expand=True)
+    canvas_frame.pack(fill="both",expand=True)
 
     drawing_canvas = tk.Canvas(canvas_frame, bg="lightgray")
     drawing_canvas.pack(fill="both", expand=True, padx=10, pady=10)
