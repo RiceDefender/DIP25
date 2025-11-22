@@ -57,14 +57,12 @@ class Model():
             A HandLandmarkerResult object or None if an error occurs.
         """
         try:
-            # convert the BGR image to RGB
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
             # create a MediaPipe image object
-            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
             
             # detect hand landmarks
             detection_result = self.detector.detect_for_video(mp_image, timestamp)
+            self.update_gesture(detection_result)
             
             return detection_result
         except Exception as e:

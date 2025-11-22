@@ -18,7 +18,7 @@ def camera_toggle():
         camera_on = False
 
         if camera is not None and camera.camera.isOpened():
-            camera.camera.release()
+            camera.stop()
 
         camera_view.configure(image="", text="")
         camera_view.image = None
@@ -27,9 +27,8 @@ def camera_toggle():
     if camera_on == False:
         print("Camera ON")
         camera_on = True
-        
         camera = Camera(camera_view, model)
-        camera.update()
+
 #--------------Save&Export----------------
 def save_export():
     global cv_canvas
@@ -129,7 +128,7 @@ def open_team_info(root):
 
     tk.Label(win, text="Team Members", font=("Arial", 14, "bold")).pack(pady=10)
     members = [
-        "KeonLee - Hand/Finger Detection",
+        "Keon Lee - Hand/Finger Detection",
         "Nathan - Camera Input / Image Processing",
         "Nghia Dao - Drawing / Interaction Logic",
         "SungJoonAn - GUI"
@@ -233,7 +232,7 @@ def main():
     camera_view.pack(fill="x", expand=False, padx=10, pady=10)
 
     model = Model()
-    camera = Camera(camera_view, model)
+    # camera = Camera(camera_view, model)
 
     #--------------Canvas area-------------
     canvas_frame = tk.Frame(window, bg="white")
@@ -263,7 +262,6 @@ def main():
     # prevent image from disappearing
     drawing_canvas.tk_canvas_image = tk_canvas_image
 
-    camera.update()
     window.mainloop()
 
 main()
