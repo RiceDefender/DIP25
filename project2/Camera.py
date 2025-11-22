@@ -2,7 +2,7 @@ import cv2
 from PIL import Image, ImageTk
 import time
 import numpy as np
-from draw_utils import draw_landmarks
+from draw_utils import draw_landmarks, display_brush_size
 
 class Camera:
     def __init__(self, view, model, drawer=None, drawing_canvas=None):
@@ -27,12 +27,18 @@ class Camera:
 
             # Draw landmarks on the frame
             if detection_result:
+                # Update gesture and brush size based on landmarks
+                self.model.update_gesture(detection_result)
+                
+                # Draw landmarks on the frame
                 draw_landmarks(frame, detection_result)
+                
+                # Display the current brush size
+                display_brush_size(frame, self.model.brush_thickness)
 
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             if self.drawer and self.drawing_canvas and detection_result:
-                self.model.update_gesture(detection_result)
                 is_drawing = self.model.is_pinching
 
                 if detection_result.hand_landmarks:
@@ -45,7 +51,8 @@ class Camera:
                     x = int(index_finger_tip.x * canvas_w)
                     y = int(index_finger_tip.y * canvas_h)
 
-                    self.drawer.update(x, y, is_drawing)
+                    # Update the drawer with the current brush thickness
+                    self.drawer.update(x, y, is_drawing, self.model.brush_thickness)
 
                     # Update the drawing canvas display
                     updated_canvas = self.drawer.get_canvas()
