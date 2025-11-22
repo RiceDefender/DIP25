@@ -20,7 +20,7 @@ def camera_toggle():
         camera_on = False
 
         if camera is not None and camera.camera.isOpened():
-            camera.camera.release()
+            camera.stop()
 
         camera_view.configure(image="", text="")
         camera_view.image = None
@@ -29,9 +29,8 @@ def camera_toggle():
     if camera_on == False:
         print("Camera ON")
         camera_on = True
-        
-        camera = Camera(camera_view, model, drawer, drawing_canvas)
-        camera.update()
+        camera = Camera(camera_view, model)
+
 #--------------Save&Export----------------
 def save_export():
     global drawer
@@ -127,7 +126,7 @@ def open_team_info(root):
 
     tk.Label(win, text="Team Members", font=("Arial", 14, "bold")).pack(pady=10)
     members = [
-        "KeonLee - Hand/Finger Detection",
+        "Keon Lee - Hand/Finger Detection",
         "Nathan - Camera Input / Image Processing",
         "Nghia Dao - Drawing / Interaction Logic",
         "SungJoonAn - GUI"
@@ -247,7 +246,6 @@ def main():
     drawer = Drawer(canvas_w, canvas_h)
     camera = Camera(camera_view, model, drawer, drawing_canvas)
 
-    camera.update()
     window.mainloop()
 
 main()
